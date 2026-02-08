@@ -6,10 +6,12 @@ __pycache__/
 # Django
 db.sqlite3
 *.log
+logs/
 
 # Virtual env
-venv/
 .env
+venv/
+env/
 
 # IDE
 .vscode/
