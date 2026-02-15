@@ -2,6 +2,7 @@ from pathlib import Path
 from .conf import SECRET_KEY
 import os
 from django.utils.log import RequireDebugTrue
+from datetime import timedelta
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,7 +51,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
 }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+}
+
 
 LOGGING = {
     'version': 1,
@@ -120,6 +127,19 @@ LOGGING = {
         },
     },
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# RATELIMIT_VIEW = "pr1.views.ratelimit_view"
+RATELIMIT_USE_CACHE = 'default'
 
 
 WSGI_APPLICATION = "settings.wsgi.application"
