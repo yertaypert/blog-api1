@@ -138,6 +138,10 @@ CACHES = {
     }
 }
 
+
+AUTH_USER_MODEL = 'users.User'
+
+
 # RATELIMIT_VIEW = "pr1.views.ratelimit_view"
 RATELIMIT_USE_CACHE = 'default'
 

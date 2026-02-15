@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
@@ -22,13 +23,6 @@ logger = logging.getLogger('blog')
 
 
 redis_client = redis.Redis(host='127.0.0.1', port=6379, db=2)
-
-
-
-# @method_decorator(
-#     ratelimit(key='user', rate='20/m', method='POST', block=True),
-#     name='create'
-# )
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -72,7 +66,7 @@ class PostViewSet(viewsets.ModelViewSet):
         cache.delete(self.CACHE_KEY)
 
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs):
         cached_data = cache.get(self.CACHE_KEY)
 
         if cached_data:
