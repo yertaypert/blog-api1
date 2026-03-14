@@ -1,0 +1,7 @@
+Hello {{ user.first_name }},
+
+Welcome to our blog!
+
+We are happy to have you here.
+
+— Blog Team

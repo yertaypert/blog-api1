@@ -5,6 +5,8 @@ from django.contrib.auth.models import (
     BaseUserManager
 )
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+import pytz
 
 
 class UserManager(BaseUserManager):
@@ -40,9 +42,27 @@ class UserManager(BaseUserManager):
     
 
 class User(AbstractBaseUser, PermissionsMixin):
+
+    LANGUAGE_CHOICES = [
+        ("en", _("English")),
+        ("ru", _("Russian")),
+        ("kk", _("Kazakh")),
+    ]
+
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+
+    preferred_language = models.CharField(
+        max_length=2,
+        choices=LANGUAGE_CHOICES,
+        default="en"
+    )
+
+    preferred_timezone = models.CharField(
+        max_length=50,
+        default="UTC"
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

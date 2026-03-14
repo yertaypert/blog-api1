@@ -1,13 +1,27 @@
-from rest_framework import serializers
-from .models import Category, Tag, Post, Comment
 from django.conf import settings
+from django.utils import formats
+from django.utils import timezone
+from django.utils.translation import get_language
+
+from rest_framework import serializers
+
+from .models import Category, Tag, Post, Comment
+
+
 
 User = settings.AUTH_USER_MODEL
 
 class CategorySerializer(serializers.ModelSerializer):
+
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug']
+
+    def get_name(self, obj):
+        lang = get_language()
+        return obj.get_name(lang)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -25,16 +39,33 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
+
     author_email = serializers.ReadOnlyField(source='author.email')
     tags = TagSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
+
+    created_at_local = serializers.SerializerMethodField()
+    updated_at_local = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = [
             'id', 'title', 'slug', 'body', 'author_email',
-            'category', 'tags', 'status', 'created_at', 'updated_at'
+            'category', 'tags', 'status',
+            'created_at_local', 'updated_at_local'
         ]
+
+    def get_created_at_local(self, obj):
+        return formats.date_format(
+            timezone.localtime(obj.created_at),
+            "DATETIME_FORMAT"
+        )
+
+    def get_updated_at_local(self, obj):
+        return formats.date_format(
+            timezone.localtime(obj.updated_at),
+            "DATETIME_FORMAT"
+        )
 
 
 class PostCreateUpdateSerializer(serializers.ModelSerializer):
