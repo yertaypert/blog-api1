@@ -6,7 +6,8 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
-from rest_framework import permissions, status, viewsets
+from rest_framework.exceptions import APIException
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
@@ -79,27 +80,54 @@ class PostViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request):
-        serializer = self.get_serializer_class()(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        post = serializer.save(author=request.user)
+        try:
+            serializer = self.get_serializer_class()(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            post = serializer.save(author=request.user)
+        except serializers.ValidationError:
+            logger.warning('Post creation failed for user: %s', request.user)
+            raise
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during post creation for user: %s', request.user)
+            raise
+
         logger.info('Post created: %s by %s', post.slug, request.user.email)
         cache.clear()
         response_serializer = PostSerializer(post)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request: Request, slug=None):
-        post = self.get_object_for_write(slug)
-        serializer = self.get_serializer_class()(post, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        post = serializer.save()
+        try:
+            post = self.get_object_for_write(slug)
+            serializer = self.get_serializer_class()(post, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            post = serializer.save()
+        except serializers.ValidationError:
+            logger.warning('Post update failed for slug %s by %s', slug, request.user)
+            raise
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during post update for slug %s by %s', slug, request.user)
+            raise
+
         logger.info('Post updated: %s by %s', post.slug, request.user.email)
         cache.clear()
         return Response(PostSerializer(post).data)
 
     def destroy(self, request: Request, slug=None):
-        post = self.get_object_for_write(slug)
-        logger.info('Post deleted: %s by %s', post.slug, request.user.email)
-        post.delete()
+        try:
+            post = self.get_object_for_write(slug)
+            logger.info('Post deleted: %s by %s', post.slug, request.user.email)
+            post.delete()
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during post deletion for slug %s by %s', slug, request.user)
+            raise
+
         cache.clear()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -121,10 +149,20 @@ class PostViewSet(viewsets.ViewSet):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
-        serializer = CommentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        comment = serializer.save(author=request.user, post=post)
-        self.publish_comment_created(post, comment, request.user.email)
+        try:
+            serializer = CommentSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            comment = serializer.save(author=request.user, post=post)
+            self.publish_comment_created(post, comment, request.user.email)
+        except serializers.ValidationError:
+            logger.warning('Comment creation failed for post %s by %s', post.slug, request.user)
+            raise
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during comment creation for post %s by %s', post.slug, request.user)
+            raise
+
         logger.info('Comment added to post %s by %s', post.slug, request.user.email)
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
@@ -138,7 +176,7 @@ class PostViewSet(viewsets.ViewSet):
         try:
             redis_client.publish('comments', json.dumps(event))
         except redis.RedisError:
-            logger.warning('Failed to publish comment_created event for %s', post.slug)
+            logger.exception('Failed to publish comment_created event for %s', post.slug)
 
 
 class CommentViewSet(viewsets.ViewSet):
@@ -153,13 +191,30 @@ class CommentViewSet(viewsets.ViewSet):
         return comment
 
     def partial_update(self, request: Request, pk=None):
-        comment = self.get_object()
-        serializer = CommentSerializer(comment, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        comment = serializer.save()
+        try:
+            comment = self.get_object()
+            serializer = CommentSerializer(comment, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            comment = serializer.save()
+        except serializers.ValidationError:
+            logger.warning('Comment update failed for comment %s by %s', pk, request.user)
+            raise
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during comment update for comment %s by %s', pk, request.user)
+            raise
+
         return Response(CommentSerializer(comment).data)
 
     def destroy(self, request: Request, pk=None):
-        comment = self.get_object()
-        comment.delete()
+        try:
+            comment = self.get_object()
+            comment.delete()
+        except APIException:
+            raise
+        except Exception:
+            logger.exception('Unexpected error during comment deletion for comment %s by %s', pk, request.user)
+            raise
+
         return Response(status=status.HTTP_204_NO_CONTENT)
