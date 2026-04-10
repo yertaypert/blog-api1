@@ -10,8 +10,12 @@ logs/
 
 # Virtual env
 .env
-venv/
 env/
+venv/
+.venv
+*/venv
+*/.venv
 
 # IDE
 .vscode/
+.idea/

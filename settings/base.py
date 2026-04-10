@@ -1,13 +1,22 @@
-from pathlib import Path
-from .conf import SECRET_KEY
+# Python modules
 import os
-from django.utils.log import RequireDebugTrue
-from datetime import timedelta
+
+from .conf import *  # noqa
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# ----------------------------------------------
+# Path
+#
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_URLCONF = "settings.urls"
+WSGI_APPLICATION = "settings.wsgi.application"
+ASGI_APPLICATION = "settings.asgi.application"
+AUTH_USER_MODEL = 'users.User'
 
-INSTALLED_APPS = [
+# ----------------------------------------------
+# Apps
+#
+DJANGO_AND_THIRD_PARTY_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -16,10 +25,16 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    "apps.blog",
-    "apps.users",
 ]
+PROJECT_APPS = [
+    "apps.blog.apps.BlogConfig",
+    "apps.users.apps.UsersConfig",
+]
+INSTALLED_APPS = DJANGO_AND_THIRD_PARTY_APPS + PROJECT_APPS
 
+# ----------------------------------------------
+# Middleware | Templates | Validators
+#
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -28,9 +43,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
-
-ROOT_URLCONF = "pr1.urls"
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -46,113 +58,54 @@ TEMPLATES = [
         },
     },
 ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-}
-
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-
-    'formatters': {
-        'simple': {
-            'format': '%(levelname)s: %(message)s',
-        },
-        'verbose': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s (%(module)s): %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
-        },
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
-
-    'filters': {
-        'require_debug_true': {
-            '()': RequireDebugTrue,
-        },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
-
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'app.log'),
-            'maxBytes': 5 * 1024 * 1024,  # 5 MB
-            'backupCount': 3,
-            'formatter': 'verbose',
-        },
-        'debug_requests': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'debug_requests.log'),
-            'maxBytes': 5 * 1024 * 1024,
-            'backupCount': 3,
-            'formatter': 'verbose',
-            'filters': ['require_debug_true'],
-        },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
-
-    'loggers': {
-        'django.request': {
-            'handlers': ['file'],
-            'level': 'WARNING',
-            'propagate': False,
-        },
-        'users': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'blog': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'debug_requests': {
-            'handlers': ['debug_requests'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
-}
+]
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+# ----------------------------------------------
+# Internationalization
+#
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+# ----------------------------------------------
+# Static | Media
+#
+STATIC_URL = "static/"
 
 
-AUTH_USER_MODEL = 'users.User'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
 
 
 # RATELIMIT_VIEW = "pr1.views.ratelimit_view"
 RATELIMIT_USE_CACHE = 'default'
 
 
-WSGI_APPLICATION = "settings.wsgi.application"
-ASGI_APPLICATION = "settings.asgi.application"
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_TZ = True
 
-STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+
+
+
+
+
+
+
+
+
