@@ -19,3 +19,6 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+# Ruff
+.ruff_cache

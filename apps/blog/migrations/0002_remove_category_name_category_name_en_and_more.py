@@ -1,0 +1,32 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ('blog', '0001_initial'),
+    ]
+
+    operations = [
+        migrations.RemoveField(
+            model_name='category',
+            name='name',
+        ),
+        migrations.AddField(
+            model_name='category',
+            name='name_en',
+            field=models.CharField(default='', max_length=100),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='category',
+            name='name_kk',
+            field=models.CharField(default='', max_length=100),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='category',
+            name='name_ru',
+            field=models.CharField(default='', max_length=100),
+            preserve_default=False,
+        ),
+    ]

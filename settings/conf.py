@@ -1,6 +1,6 @@
 # Python modules
 import os
-from decouple import config, Config, RepositoryEnv
+from decouple import config
 from datetime import timedelta
 
 # Django modules
@@ -14,7 +14,7 @@ SETTINGS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SETTINGS_DIR)
 
 env_path = os.path.join(SETTINGS_DIR, '.env')
-config = Config(RepositoryEnv(env_path))
+
 
 # ----------------------------------------------
 # Env id
