@@ -10,16 +10,17 @@ from .models import Category, Tag, Post, Comment
 
 User = settings.AUTH_USER_MODEL
 
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug']
+        fields = ["id", "name", "slug"]
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'slug']
+        fields = ["id", "name", "slug"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -27,7 +28,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'author_email', 'body', 'created_at']
+        fields = ["id", "author_email", "body", "created_at"]
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -38,12 +39,12 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'slug', 'body', 'author_email',
-            'category', 'tags', 'status', 'created_at', 'updated_at'
+            "id", "title", "slug", "body", "author_email",
+            "category", "tags", "status", "created_at", "updated_at"
         ]
 
 
 class PostCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['title', 'slug', 'body', 'category', 'tags', 'status']
+        fields = ["title", "slug", "body", "category", "tags", "status"]

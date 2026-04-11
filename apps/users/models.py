@@ -59,13 +59,20 @@ class UserManager(BaseUserManager):
     
 
 class User(AbstractBaseUser, PermissionsMixin):
-    DEFAULT_LANGUAGE = settings.LANGUAGE_CODE.split("-")[0]
+    class PreferredLanguage(models.TextChoices):
+        ENGLISH = "en", "English"
+
+    DEFAULT_LANGUAGE = PreferredLanguage.ENGLISH
     DEFAULT_TIMEZONE = settings.TIME_ZONE
 
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    preferred_language = models.CharField(max_length=2, default=DEFAULT_LANGUAGE)
+    preferred_language = models.CharField(
+        max_length=2,
+        choices=PreferredLanguage.choices,
+        default=DEFAULT_LANGUAGE,
+    )
     preferred_timezone = models.CharField(max_length=50, default=DEFAULT_TIMEZONE)
 
     is_active = models.BooleanField(default=True)

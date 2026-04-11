@@ -15,13 +15,15 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Project modules
+from apps.core.constants import RATE_LIMIT_EXCEEDED_DETAIL
+from .constants import REGISTER_RATE_LIMIT, USERS_LOGGER_NAME
 from .serializers import LoggingTokenObtainPairSerializer, RegisterSerializer
 
 
-logger = logging.getLogger('users')
+logger = logging.getLogger(USERS_LOGGER_NAME)
 
 
-@method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True), name='create')
+@method_decorator(ratelimit(key='ip', rate=REGISTER_RATE_LIMIT, method='POST', block=True), name='create')
 class RegisterView(viewsets.GenericViewSet):
     serializer_class = RegisterSerializer
 
@@ -50,6 +52,6 @@ class LoginView(TokenObtainPairView):
 
 def ratelimit_response(request: HttpRequest, exception: Exception) -> JsonResponse:
     return JsonResponse(
-        {'detail': 'Too many requests. Try again later.'},
+        {'detail': RATE_LIMIT_EXCEEDED_DETAIL},
         status=429,
     )

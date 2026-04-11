@@ -24,7 +24,12 @@ from .redis import publish_comment_event
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer
 
 
-logger = logging.getLogger('blog')
+LOGGER_NAME = "blog"
+POSTS_CACHE_KEY_PREFIX = "published_posts_list"
+POSTS_CACHE_KEY_REGISTRY = f"{POSTS_CACHE_KEY_PREFIX}:keys"
+COMMENTS_ACTION = "comments"
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class PostPagination(PageNumberPagination):
@@ -34,14 +39,14 @@ class PostPagination(PageNumberPagination):
 class PostViewSet(viewsets.ViewSet):
     lookup_field = 'slug'
     pagination_class = PostPagination
-    CACHE_KEY_PREFIX = 'published_posts_list'
-    CACHE_KEY_REGISTRY = f'{CACHE_KEY_PREFIX}:keys'
+    CACHE_KEY_PREFIX = POSTS_CACHE_KEY_PREFIX
+    CACHE_KEY_REGISTRY = POSTS_CACHE_KEY_REGISTRY
 
     def get_permissions(self) -> list[BasePermission]:
-        if self.action in ['create', 'partial_update', 'destroy', 'comments']:
-            if self.action == 'comments' and self.request.method == 'GET':
+        if self.action in ("create", "partial_update", "destroy", COMMENTS_ACTION):
+            if self.action == COMMENTS_ACTION and self.request.method == 'GET':
                 permission_classes = [permissions.AllowAny]
-            elif self.action == 'comments':
+            elif self.action == COMMENTS_ACTION:
                 permission_classes = [permissions.IsAuthenticated]
             else:
                 permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
@@ -50,7 +55,7 @@ class PostViewSet(viewsets.ViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        if self.action in ['list', 'retrieve', 'comments']:
+        if self.action in ("list", "retrieve", COMMENTS_ACTION):
             return Post.objects.filter(status=Post.Status.PUBLISHED).select_related('author', 'category').prefetch_related('tags')
         return Post.objects.all().select_related('author', 'category').prefetch_related('tags')
 
@@ -61,7 +66,7 @@ class PostViewSet(viewsets.ViewSet):
         return post
 
     def get_serializer_class(self) -> type[serializers.Serializer]:
-        if self.action in ['create', 'partial_update']:
+        if self.action in ("create", "partial_update"):
             return PostCreateUpdateSerializer
         return PostSerializer
 
@@ -188,10 +193,10 @@ class PostViewSet(viewsets.ViewSet):
 
     def publish_comment_created(self, post: Post, comment: Comment, author_email: str) -> None:
         event: dict[str, Any] = {
-            'type': 'comment_created',
-            'post_slug': post.slug,
-            'author': author_email,
-            'body': comment.body,
+            "type": "comment_created",
+            "post_slug": post.slug,
+            "author": author_email,
+            "body": comment.body,
         }
         try:
             publish_comment_event(event)

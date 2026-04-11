@@ -2,6 +2,9 @@
 import logging
 from typing import Any
 
+# Project modules
+from .constants import USERS_LOGGER_NAME
+
 # Django modules
 from django.contrib.auth import get_user_model
 
@@ -13,7 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 User = get_user_model()
-logger = logging.getLogger('users')
+logger = logging.getLogger(USERS_LOGGER_NAME)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -25,14 +28,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'email',
-            'first_name',
-            'last_name',
-            'password',
-            'password2',
-            'avatar',
-            'preferred_language',
-            'preferred_timezone',
+            "email",
+            "first_name",
+            "last_name",
+            "password",
+            "password2",
+            "avatar",
+            "preferred_language",
+            "preferred_timezone",
         )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -50,9 +53,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def to_representation(self, instance: User) -> dict[str, Any]:
         data = super().to_representation(instance)
         refresh = RefreshToken.for_user(instance)
-        data['tokens'] = {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+        data["tokens"] = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
         }
         data.pop('password', None)
         return data
