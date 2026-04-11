@@ -39,17 +39,20 @@ INSTALLED_APPS = DJANGO_AND_THIRD_PARTY_APPS + PROJECT_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_ratelimit.middleware.RatelimitMiddleware",
     "core.middleware.DebugRequestLoggingMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.LanguageDetectionMiddleware",
+    "apps.core.timezone_middleware.UserTimezoneMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -80,8 +83,21 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 #
 LANGUAGE_CODE = "en-us"
+
+LANGUAGES = [
+    ("en", "English"),
+    ("ru", "Russian"),
+    ("kk", "Kazakh"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 TIME_ZONE = "UTC"
+
 USE_I18N = True
+
 USE_TZ = True
 
 # ----------------------------------------------

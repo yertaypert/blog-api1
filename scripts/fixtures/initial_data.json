@@ -1,0 +1,175 @@
+[
+  {
+    "model": "users.user",
+    "pk": 1,
+    "fields": {
+      "email": "admin@example.com",
+      "first_name": "Admin",
+      "last_name": "User",
+      "password": "pbkdf2_sha256$260000$kXlHbkD2kI0K$Yl7j+V6YkQbw8E69kFyP4nZxqlGgP2wFhVd4i/Oe8Mc=",
+      "is_superuser": true,
+      "is_staff": true,
+      "preferred_language": "en",
+      "timezone": "UTC"
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 2,
+    "fields": {
+      "email": "user1@example.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "password": "pbkdf2_sha256$260000$abcdef$1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "is_superuser": false,
+      "is_staff": false,
+      "preferred_language": "en",
+      "timezone": "Europe/London"
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 3,
+    "fields": {
+      "email": "user2@example.com",
+      "first_name": "Ирина",
+      "last_name": "Петрова",
+      "password": "pbkdf2_sha256$260000$abcdef$1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "is_superuser": false,
+      "is_staff": false,
+      "preferred_language": "ru",
+      "timezone": "Europe/Moscow"
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 4,
+    "fields": {
+      "email": "user3@example.com",
+      "first_name": "Айдар",
+      "last_name": "Нурбеков",
+      "password": "pbkdf2_sha256$260000$abcdef$1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "is_superuser": false,
+      "is_staff": false,
+      "preferred_language": "kk",
+      "timezone": "Asia/Almaty"
+    }
+  },
+  {
+    "model": "blog.category",
+    "pk": 1,
+    "fields": {
+      "name_en": "Technology",
+      "name_ru": "Технологии",
+      "name_kk": "Технология"
+    }
+  },
+  {
+    "model": "blog.category",
+    "pk": 2,
+    "fields": {
+      "name_en": "Lifestyle",
+      "name_ru": "Образ жизни",
+      "name_kk": "Өмір салты"
+    }
+  },
+  {
+    "model": "blog.category",
+    "pk": 3,
+    "fields": {
+      "name_en": "Science",
+      "name_ru": "Наука",
+      "name_kk": "Ғылым"
+    }
+  },
+  {
+    "model": "blog.tag",
+    "pk": 1,
+    "fields": {"name": "Python"}
+  },
+  {
+    "model": "blog.tag",
+    "pk": 2,
+    "fields": {"name": "Django"}
+  },
+  {
+    "model": "blog.tag",
+    "pk": 3,
+    "fields": {"name": "AI"}
+  },
+  {
+    "model": "blog.tag",
+    "pk": 4,
+    "fields": {"name": "Health"}
+  },
+  {
+    "model": "blog.tag",
+    "pk": 5,
+    "fields": {"name": "Space"}
+  },
+  {
+    "model": "blog.post",
+    "pk": 1,
+    "fields": {
+      "title": "First Post",
+      "slug": "first-post",
+      "body": "This is the first post content.",
+      "status": "published",
+      "author": 2,
+      "category": 1,
+      "tags": [1, 2],
+      "created_at": "2026-03-14T10:00:00Z",
+      "updated_at": "2026-03-14T10:00:00Z"
+    }
+  },
+  {
+    "model": "blog.post",
+    "pk": 2,
+    "fields": {
+      "title": "Second Post",
+      "slug": "second-post",
+      "body": "This is a draft post.",
+      "status": "draft",
+      "author": 2,
+      "category": 2,
+      "tags": [4],
+      "created_at": "2026-03-13T12:00:00Z",
+      "updated_at": "2026-03-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "blog.post",
+    "pk": 3,
+    "fields": {
+      "title": "AI in 2026",
+      "slug": "ai-2026",
+      "body": "Exploring AI advancements.",
+      "status": "published",
+      "author": 3,
+      "category": 3,
+      "tags": [3, 5],
+      "created_at": "2026-03-12T08:00:00Z",
+      "updated_at": "2026-03-12T08:00:00Z"
+    }
+  },
+  {
+    "model": "blog.comment",
+    "pk": 1,
+    "fields": {
+      "body": "Great post!",
+      "author": 4,
+      "post": 1,
+      "created_at": "2026-03-14T11:00:00Z"
+    }
+  },
+  {
+    "model": "blog.comment",
+    "pk": 2,
+    "fields": {
+      "body": "Thanks for sharing.",
+      "author": 2,
+      "post": 3,
+      "created_at": "2026-03-12T09:00:00Z"
+    }
+  }
+]

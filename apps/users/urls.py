@@ -1,7 +1,8 @@
 # Django modules
-from django.urls import path
+from django.urls import path, include
 
 # Django Rest Framework modules
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -11,7 +12,10 @@ from rest_framework_simplejwt.views import (
 from .views import RegisterView
 
 
+router = DefaultRouter()
+router.register(r'register', RegisterView, basename='register')
+
 urlpatterns = [
-    path('register/', RegisterView.as_view({'post': 'create'}), name='register'),
+    path('', include(router.urls)),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

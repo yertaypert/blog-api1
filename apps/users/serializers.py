@@ -2,17 +2,21 @@
 import logging
 from typing import Any
 
-# Project modules
-from .constants import USERS_LOGGER_NAME
-
 # Django modules
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 
 # Django Rest Framework modules
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Project modules
+from .constants import USERS_LOGGER_NAME
+from .validators import TimezoneValidator
 
 
 User = get_user_model()
@@ -20,8 +24,20 @@ logger = logging.getLogger(USERS_LOGGER_NAME)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
+    password = serializers.CharField(
+        write_only=True,
+        error_messages={
+            "required": _("Password is required."),
+            "blank": _("Password cannot be empty."),
+        }
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        error_messages={
+            "required": _("Password confirmation is required."),
+            "blank": _("Password confirmation cannot be empty."),
+        }
+    )
     preferred_language = serializers.CharField(required=False)
     preferred_timezone = serializers.CharField(required=False)
 
@@ -40,8 +56,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({'password': "Password fields didn't match."})
+            raise serializers.ValidationError({"password": _("Password fields didn't match.")})
         return attrs
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                _("User with this email already exists.")
+            )
+        return value
 
     def create(self, validated_data: dict[str, Any]) -> User:
         validated_data.pop('password2')
@@ -76,3 +99,15 @@ class LoggingTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         logger.info('Login succeeded for email: %s', email)
         return data
+    
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+
+    timezone = serializers.CharField(
+        source='preferred_timezone',
+        validators=[TimezoneValidator()]
+    )
+
+    class Meta:
+        model = User
+        fields = ("preferred_language", "timezone")
