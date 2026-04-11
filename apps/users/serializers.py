@@ -1,11 +1,14 @@
+# Python modules
 import logging
 
+# Django modules
+from django.contrib.auth import get_user_model
+
+# Django Rest Framework modules
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from django.contrib.auth import get_user_model
 
 
 User = get_user_model()

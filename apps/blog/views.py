@@ -1,11 +1,16 @@
+# Python modules
 import json
 import logging
 
 import redis
+
+# Django modules
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+
+# Django Rest Framework modules
 from rest_framework.exceptions import APIException
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -13,6 +18,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+# Project modules
 from .models import Comment, Post
 from .permissions import IsOwnerOrReadOnly
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer

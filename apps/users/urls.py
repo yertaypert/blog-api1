@@ -1,9 +1,14 @@
+# Django modules
 from django.urls import path
-from .views import RegisterView
+
+# Django Rest Framework modules
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
+# Project modules
+from .views import RegisterView
 
 
 urlpatterns = [

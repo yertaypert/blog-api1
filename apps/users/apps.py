@@ -1,3 +1,4 @@
+# Django modules
 from django.apps import AppConfig
 
 

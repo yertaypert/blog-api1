@@ -1,11 +1,16 @@
+# Python modules
 import logging
 
+# Django modules
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+
+# Django Rest Framework modules
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+# Project modules
 from .serializers import LoggingTokenObtainPairSerializer, RegisterSerializer
 
 

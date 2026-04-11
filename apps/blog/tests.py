@@ -1,9 +1,13 @@
+# Django modules
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+
+# Django Rest Framework modules
 from rest_framework import status
 from rest_framework.test import APIClient
 
+# Project modules
 from .models import Comment, Post
 
 

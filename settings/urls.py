@@ -1,7 +1,9 @@
+# Django modules
 from django.contrib import admin
 from django.urls import include, path
 from django_ratelimit.decorators import ratelimit
 
+# Project modules
 from apps.users.views import LoginView
 
 

@@ -1,6 +1,12 @@
-from rest_framework import serializers
-from .models import Category, Tag, Post, Comment
+# Django modules
 from django.conf import settings
+
+# Django Rest Framework modules
+from rest_framework import serializers
+
+# Project modules
+from .models import Category, Tag, Post, Comment
+
 
 User = settings.AUTH_USER_MODEL
 

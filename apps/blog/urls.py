@@ -1,5 +1,7 @@
+# Django Rest Framework modules
 from rest_framework.routers import DefaultRouter
 
+# Project modules
 from .views import CommentViewSet, PostViewSet
 
 router = DefaultRouter()

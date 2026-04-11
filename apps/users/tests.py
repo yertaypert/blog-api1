@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
+# Django modules
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+
+# Django Rest Framework modules
 from rest_framework import status
 from rest_framework.test import APIClient
 
