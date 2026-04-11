@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from django.core.management.base import BaseCommand
 
@@ -8,7 +9,7 @@ from apps.blog.redis import COMMENTS_CHANNEL, get_redis_connection
 class Command(BaseCommand):
     help = "Subscribe to the Redis comments channel and print incoming events."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         pubsub = get_redis_connection().pubsub()
         pubsub.subscribe(COMMENTS_CHANNEL)
 
@@ -28,7 +29,8 @@ class Command(BaseCommand):
         finally:
             pubsub.close()
 
-    def decode_payload(self, payload) -> str:
+
+    def decode_payload(self, payload: Any) -> str:
         if isinstance(payload, bytes):
             payload = payload.decode("utf-8")
 

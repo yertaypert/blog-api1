@@ -1,5 +1,6 @@
 # Python modules
 import logging
+from typing import Any
 
 # Django modules
 from django.core.cache import cache
@@ -12,6 +13,7 @@ from rest_framework.exceptions import APIException
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -35,7 +37,7 @@ class PostViewSet(viewsets.ViewSet):
     CACHE_KEY_PREFIX = 'published_posts_list'
     CACHE_KEY_REGISTRY = f'{CACHE_KEY_PREFIX}:keys'
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[BasePermission]:
         if self.action in ['create', 'partial_update', 'destroy', 'comments']:
             if self.action == 'comments' and self.request.method == 'GET':
                 permission_classes = [permissions.AllowAny]
@@ -52,18 +54,18 @@ class PostViewSet(viewsets.ViewSet):
             return Post.objects.filter(status=Post.Status.PUBLISHED).select_related('author', 'category').prefetch_related('tags')
         return Post.objects.all().select_related('author', 'category').prefetch_related('tags')
 
-    def get_object(self):
+    def get_object(self) -> Post:
         queryset = self.get_queryset()
         post = get_object_or_404(queryset, slug=self.kwargs[self.lookup_field])
         self.check_object_permissions(self.request, post)
         return post
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[serializers.Serializer]:
         if self.action in ['create', 'partial_update']:
             return PostCreateUpdateSerializer
         return PostSerializer
 
-    def list(self, request: Request):
+    def list(self, request: Request) -> Response:
         queryset = self.get_queryset().order_by('-created_at')
         page_number = request.query_params.get('page', '1')
         cache_key = f'{self.CACHE_KEY_PREFIX}:{page_number}'
@@ -79,13 +81,13 @@ class PostViewSet(viewsets.ViewSet):
         self.track_posts_cache_key(cache_key)
         return response
 
-    def retrieve(self, request: Request, slug=None):
+    def retrieve(self, request: Request, slug: str | None = None) -> Response:
         post = self.get_object()
         serializer = self.get_serializer_class()(post)
         return Response(serializer.data)
 
     @method_decorator(ratelimit(key='user', rate='20/m', method='POST', block=True))
-    def create(self, request: Request):
+    def create(self, request: Request) -> Response:
         try:
             serializer = self.get_serializer_class()(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -104,7 +106,7 @@ class PostViewSet(viewsets.ViewSet):
         response_serializer = PostSerializer(post)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-    def partial_update(self, request: Request, slug=None):
+    def partial_update(self, request: Request, slug: str | None = None) -> Response:
         try:
             post = self.get_object_for_write(slug)
             serializer = self.get_serializer_class()(post, data=request.data, partial=True)
@@ -123,7 +125,7 @@ class PostViewSet(viewsets.ViewSet):
         self.invalidate_posts_list_cache()
         return Response(PostSerializer(post).data)
 
-    def destroy(self, request: Request, slug=None):
+    def destroy(self, request: Request, slug: str | None = None) -> Response:
         try:
             post = self.get_object_for_write(slug)
             logger.info('Post deleted: %s by %s', post.slug, request.user.email)
@@ -137,7 +139,7 @@ class PostViewSet(viewsets.ViewSet):
         self.invalidate_posts_list_cache()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get_object_for_write(self, slug):
+    def get_object_for_write(self, slug: str | None) -> Post:
         post = get_object_or_404(
             Post.objects.all().select_related('author', 'category').prefetch_related('tags'),
             slug=slug,
@@ -146,7 +148,7 @@ class PostViewSet(viewsets.ViewSet):
         return post
 
     @action(detail=True, methods=['get', 'post'], url_path='comments', url_name='comments')
-    def comments(self, request: Request, slug=None):
+    def comments(self, request: Request, slug: str | None = None) -> Response:
         post = self.get_object()
 
         if request.method == 'GET':
@@ -185,7 +187,7 @@ class PostViewSet(viewsets.ViewSet):
         cache.delete(self.CACHE_KEY_REGISTRY)
 
     def publish_comment_created(self, post: Post, comment: Comment, author_email: str) -> None:
-        event = {
+        event: dict[str, Any] = {
             'type': 'comment_created',
             'post_slug': post.slug,
             'author': author_email,
@@ -200,15 +202,15 @@ class PostViewSet(viewsets.ViewSet):
 class CommentViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[BasePermission]:
         return [permission() for permission in self.permission_classes]
 
-    def get_object(self):
+    def get_object(self) -> Comment:
         comment = get_object_or_404(Comment.objects.select_related('author', 'post'), pk=self.kwargs['pk'])
         self.check_object_permissions(self.request, comment)
         return comment
 
-    def partial_update(self, request: Request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         try:
             comment = self.get_object()
             serializer = CommentSerializer(comment, data=request.data, partial=True)
@@ -225,7 +227,7 @@ class CommentViewSet(viewsets.ViewSet):
 
         return Response(CommentSerializer(comment).data)
 
-    def destroy(self, request: Request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         try:
             comment = self.get_object()
             comment.delete()

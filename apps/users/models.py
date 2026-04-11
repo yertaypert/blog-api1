@@ -1,3 +1,6 @@
+# Python modules
+from typing import Any
+
 # Django modules
 from django.conf import settings
 from django.db import models
@@ -11,7 +14,14 @@ from django.utils import timezone
 
 class UserManager(BaseUserManager):
 
-    def create_user(self, email, first_name, last_name, password=None, **extra_fields):
+    def create_user(
+        self,
+        email: str,
+        first_name: str,
+        last_name: str,
+        password: str | None = None,
+        **extra_fields: Any,
+    ) -> "User":
         if not email:
             raise ValueError("Users must have an email address")
 
@@ -28,7 +38,14 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, first_name, last_name, password=None, **extra_fields):
+    def create_superuser(
+        self,
+        email: str,
+        first_name: str,
+        last_name: str,
+        password: str | None = None,
+        **extra_fields: Any,
+    ) -> "User":
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -78,5 +95,5 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.email

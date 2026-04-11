@@ -1,5 +1,6 @@
 # Python modules
 import logging
+from typing import Any
 
 # Django modules
 from django.contrib.auth import get_user_model
@@ -34,19 +35,19 @@ class RegisterSerializer(serializers.ModelSerializer):
             'preferred_timezone',
         )
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({'password': "Password fields didn't match."})
         return attrs
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> User:
         validated_data.pop('password2')
         password = validated_data.pop('password')
         user = User.objects.create_user(password=password, **validated_data)
         logger.debug('Created user object in serializer: %s', user.email)
         return user
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: User) -> dict[str, Any]:
         data = super().to_representation(instance)
         refresh = RefreshToken.for_user(instance)
         data['tokens'] = {
@@ -58,7 +59,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoggingTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         email = attrs.get(self.username_field)
         logger.info('Login attempt for email: %s', email)
         try:

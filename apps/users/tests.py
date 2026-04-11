@@ -13,7 +13,7 @@ from rest_framework.test import APIClient
 
 @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
 class UserLoggingTests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         cache.clear()
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -23,7 +23,7 @@ class UserLoggingTests(TestCase):
             password='strong-pass-123',
         )
 
-    def test_login_success_is_logged(self):
+    def test_login_success_is_logged(self) -> None:
         with self.assertLogs('users', level='INFO') as logs:
             response = self.client.post(
                 '/api/auth/token/',
@@ -35,7 +35,7 @@ class UserLoggingTests(TestCase):
         self.assertTrue(any('Login attempt for email: user@example.com' in message for message in logs.output))
         self.assertTrue(any('Login succeeded for email: user@example.com' in message for message in logs.output))
 
-    def test_login_failure_is_logged(self):
+    def test_login_failure_is_logged(self) -> None:
         with self.assertLogs('users', level='WARNING') as logs:
             response = self.client.post(
                 '/api/auth/token/',
@@ -46,7 +46,7 @@ class UserLoggingTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertTrue(any('Login failed for email: user@example.com' in message for message in logs.output))
 
-    def test_registration_validation_failure_is_logged(self):
+    def test_registration_validation_failure_is_logged(self) -> None:
         with self.assertLogs('users', level='WARNING') as logs:
             response = self.client.post(
                 '/api/auth/register/',
@@ -63,7 +63,7 @@ class UserLoggingTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(any('Registration failed for email: new@example.com' in message for message in logs.output))
 
-    def test_registration_uses_default_preference_values(self):
+    def test_registration_uses_default_preference_values(self) -> None:
         response = self.client.post(
             '/api/auth/register/',
             {
@@ -81,7 +81,7 @@ class UserLoggingTests(TestCase):
         self.assertEqual(user.preferred_language, 'en')
         self.assertEqual(user.preferred_timezone, 'UTC')
 
-    def test_registration_unexpected_error_uses_exception_logging(self):
+    def test_registration_unexpected_error_uses_exception_logging(self) -> None:
         payload = {
             'email': 'boom@example.com',
             'first_name': 'Boom',
@@ -97,13 +97,13 @@ class UserLoggingTests(TestCase):
 
         self.assertTrue(any('Unexpected registration error for email: boom@example.com' in message for message in logs.output))
 
-    def test_debug_request_logger_receives_incoming_requests(self):
+    def test_debug_request_logger_receives_incoming_requests(self) -> None:
         with self.assertLogs('debug_requests', level='DEBUG') as logs:
             self.client.get('/api/posts/')
 
         self.assertTrue(any('Incoming request: GET /api/posts/' in message for message in logs.output))
 
-    def test_register_is_rate_limited_per_ip(self):
+    def test_register_is_rate_limited_per_ip(self) -> None:
         for index in range(5):
             response = self.client.post(
                 '/api/auth/register/',
@@ -135,7 +135,7 @@ class UserLoggingTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(response.json(), {'detail': 'Too many requests. Try again later.'})
 
-    def test_login_is_rate_limited_per_ip(self):
+    def test_login_is_rate_limited_per_ip(self) -> None:
         for _ in range(10):
             response = self.client.post(
                 '/api/auth/token/',
@@ -155,7 +155,7 @@ class UserLoggingTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(response.json(), {'detail': 'Too many requests. Try again later.'})
 
-    def test_register_rate_limit_does_not_clear_unrelated_cache_entries(self):
+    def test_register_rate_limit_does_not_clear_unrelated_cache_entries(self) -> None:
         cache.set('sentinel', 'value', timeout=60)
 
         for index in range(5):

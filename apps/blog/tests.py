@@ -1,3 +1,6 @@
+# Python modules
+from typing import Iterator
+
 # Django modules
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -24,7 +27,7 @@ TEST_CACHES = {
 
 @override_settings(CACHES=TEST_CACHES)
 class BlogViewSetTests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         cache.clear()
         self.client = APIClient()
         self.user = self.create_user('author@example.com')
@@ -49,7 +52,7 @@ class BlogViewSetTests(TestCase):
             body='Original comment',
         )
 
-    def create_user(self, email):
+    def create_user(self, email: str):
         return get_user_model().objects.create_user(
             email=email,
             first_name='Test',
@@ -57,28 +60,28 @@ class BlogViewSetTests(TestCase):
             password='strong-pass-123',
         )
 
-    def test_posts_list_only_returns_published_posts(self):
+    def test_posts_list_only_returns_published_posts(self) -> None:
         response = self.client.get(reverse('post-list'))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['slug'], self.published_post.slug)
 
-    def test_posts_comments_route_is_nested_under_slug(self):
+    def test_posts_comments_route_is_nested_under_slug(self) -> None:
         response = self.client.get(reverse('post-comments', kwargs={'slug': self.published_post.slug}))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['body'], self.comment.body)
 
-    def test_draft_post_is_not_available_through_public_routes(self):
+    def test_draft_post_is_not_available_through_public_routes(self) -> None:
         post_response = self.client.get(reverse('post-detail', kwargs={'slug': self.draft_post.slug}))
         comments_response = self.client.get(reverse('post-comments', kwargs={'slug': self.draft_post.slug}))
 
         self.assertEqual(post_response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(comments_response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_authenticated_user_can_create_comment_for_published_post(self):
+    def test_authenticated_user_can_create_comment_for_published_post(self) -> None:
         self.client.force_authenticate(self.other_user)
 
         with patch('apps.blog.views.publish_comment_event') as publish_comment_event:
@@ -102,7 +105,7 @@ class BlogViewSetTests(TestCase):
             }
         )
 
-    def test_post_owner_can_patch_post_but_other_user_cannot(self):
+    def test_post_owner_can_patch_post_but_other_user_cannot(self) -> None:
         own_client = APIClient()
         own_client.force_authenticate(self.user)
         own_response = own_client.patch(
@@ -124,7 +127,7 @@ class BlogViewSetTests(TestCase):
         self.published_post.refresh_from_db()
         self.assertEqual(self.published_post.title, 'Updated title')
 
-    def test_only_comment_owner_can_update_comment(self):
+    def test_only_comment_owner_can_update_comment(self) -> None:
         owner_client = APIClient()
         owner_client.force_authenticate(self.user)
         owner_response = owner_client.patch(
@@ -146,7 +149,7 @@ class BlogViewSetTests(TestCase):
         self.comment.refresh_from_db()
         self.assertEqual(self.comment.body, 'Edited by owner')
 
-    def test_post_create_is_rate_limited_per_user(self):
+    def test_post_create_is_rate_limited_per_user(self) -> None:
         self.client.force_authenticate(self.user)
 
         for index in range(20):
@@ -176,7 +179,7 @@ class BlogViewSetTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(response.json(), {'detail': 'Too many requests. Try again later.'})
 
-    def test_comment_creation_is_not_rate_limited_by_post_limit(self):
+    def test_comment_creation_is_not_rate_limited_by_post_limit(self) -> None:
         self.client.force_authenticate(self.other_user)
 
         with patch('apps.blog.views.publish_comment_event'):
@@ -188,7 +191,7 @@ class BlogViewSetTests(TestCase):
                 )
                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_post_write_invalidates_only_post_list_cache(self):
+    def test_post_write_invalidates_only_post_list_cache(self) -> None:
         list_response = self.client.get(reverse('post-list'))
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
 
@@ -214,7 +217,7 @@ class BlogViewSetTests(TestCase):
 
 class ListenCommentsCommandTests(TestCase):
     @patch('apps.blog.management.commands.listen_comments.get_redis_connection')
-    def test_listen_comments_prints_incoming_messages(self, get_redis_connection):
+    def test_listen_comments_prints_incoming_messages(self, get_redis_connection) -> None:
         pubsub = MagicMock()
         pubsub.listen.return_value = iter(
             [
@@ -224,7 +227,7 @@ class ListenCommentsCommandTests(TestCase):
             ]
         )
 
-        def listen_side_effect():
+        def listen_side_effect() -> Iterator[object]:
             for item in pubsub.listen.return_value:
                 if isinstance(item, BaseException):
                     raise item
