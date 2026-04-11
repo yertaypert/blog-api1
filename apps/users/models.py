@@ -1,4 +1,5 @@
 # Django modules
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -23,7 +24,7 @@ class UserManager(BaseUserManager):
             **extra_fields
         )
 
-        user.set_password(password)  # hashes password
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
@@ -41,9 +42,14 @@ class UserManager(BaseUserManager):
     
 
 class User(AbstractBaseUser, PermissionsMixin):
+    DEFAULT_LANGUAGE = settings.LANGUAGE_CODE.split("-")[0]
+    DEFAULT_TIMEZONE = settings.TIME_ZONE
+
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+    preferred_language = models.CharField(max_length=2, default=DEFAULT_LANGUAGE)
+    preferred_timezone = models.CharField(max_length=50, default=DEFAULT_TIMEZONE)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

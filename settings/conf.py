@@ -1,7 +1,7 @@
 # Python modules
 import os
-from decouple import config
 from datetime import timedelta
+from decouple import Csv, config
 
 # Django modules
 from django.utils.log import RequireDebugTrue
@@ -22,6 +22,12 @@ env_path = os.path.join(SETTINGS_DIR, '.env')
 SECRET_KEY = config("BLOG_SECRET_KEY", default="default-secret-key", cast=str)
 ENV_ID = config("BLOG_ENV_ID", default="local", cast=str)
 ALLOWED_ENV_IDS = ("local", "prod",)
+ALLOWED_HOSTS = config("BLOG_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+EMAIL_BACKEND = config(
+    "BLOG_EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+    cast=str,
+)
 
 # ----------------------------------------------
 # Django REST Framework
@@ -34,6 +40,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
 }
 
 # ----------------------------------------------
@@ -163,13 +170,24 @@ LOGGING = {
     },
 }
 
+# ------------------------------------------------
+# Redis Configuration
+#
+REDIS_HOST = config("REDIS_HOST", cast=str, default="localhost")
+REDIS_PORT = config("REDIS_PORT", cast=int, default=6379)
+REDIS_CELERY_DB = config("REDIS_CELERY_DB", cast=int, default=1)
+REDIS_DB = config("REDIS_DB", cast=int, default=2)
+
+REDIS_CELERY_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+
 # ----------------------------------------------
 # Caching
 #
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }

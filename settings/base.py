@@ -40,6 +40,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django_ratelimit.middleware.RatelimitMiddleware",
     "core.middleware.DebugRequestLoggingMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -94,5 +95,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 
-# RATELIMIT_VIEW = "pr1.views.ratelimit_view"
+RATELIMIT_VIEW = "apps.users.views.ratelimit_response"
 RATELIMIT_USE_CACHE = 'default'

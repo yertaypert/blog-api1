@@ -1,27 +1,41 @@
-# apps/blog/management/commands/listen_comments.py
 import json
-import redis
+
 from django.core.management.base import BaseCommand
-# from django.conf import settings
+
+from apps.blog.redis import COMMENTS_CHANNEL, get_redis_connection
+
 
 class Command(BaseCommand):
-    help = 'Listens to the Redis comments channel'
+    help = "Subscribe to the Redis comments channel and print incoming events."
 
     def handle(self, *args, **options):
-        r = redis.from_url('redis://127.0.0.1:6379/1')
-        pubsub = r.pubsub()
-        pubsub.subscribe('comments')
+        pubsub = get_redis_connection().pubsub()
+        pubsub.subscribe(COMMENTS_CHANNEL)
 
-        self.stdout.write(self.style.SUCCESS('Listening for comments... Press Ctrl+C to stop.'))
+        self.stdout.write(
+            self.style.SUCCESS(f"Listening on '{COMMENTS_CHANNEL}' channel. Press Ctrl+C to stop.")
+        )
 
         try:
             for message in pubsub.listen():
-                if message['type'] == 'message':
-                    # Decode bytes to string, then load JSON
-                    data = json.loads(message['data'].decode('utf-8'))
-                    self.stdout.write(
-                        f"New Comment on [{data['post_slug']}]: "
-                        f"'{data['body']}' by {data['author']}"
-                    )
+                if message.get("type") != "message":
+                    continue
+
+                payload = self.decode_payload(message.get("data"))
+                self.stdout.write(payload)
         except KeyboardInterrupt:
-            self.stdout.write(self.style.WARNING('\nStopping listener...'))
+            self.stdout.write(self.style.WARNING("Stopping listener."))
+        finally:
+            pubsub.close()
+
+    def decode_payload(self, payload) -> str:
+        if isinstance(payload, bytes):
+            payload = payload.decode("utf-8")
+
+        if isinstance(payload, str):
+            try:
+                return json.dumps(json.loads(payload), ensure_ascii=True)
+            except json.JSONDecodeError:
+                return payload
+
+        return json.dumps(payload, ensure_ascii=True)

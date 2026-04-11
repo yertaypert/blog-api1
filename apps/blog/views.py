@@ -1,8 +1,5 @@
 # Python modules
-import json
 import logging
-
-import redis
 
 # Django modules
 from django.core.cache import cache
@@ -21,11 +18,11 @@ from rest_framework.response import Response
 # Project modules
 from .models import Comment, Post
 from .permissions import IsOwnerOrReadOnly
+from .redis import publish_comment_event
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer
 
 
 logger = logging.getLogger('blog')
-redis_client = redis.Redis(host='127.0.0.1', port=6379, db=2)
 
 
 class PostPagination(PageNumberPagination):
@@ -36,6 +33,7 @@ class PostViewSet(viewsets.ViewSet):
     lookup_field = 'slug'
     pagination_class = PostPagination
     CACHE_KEY_PREFIX = 'published_posts_list'
+    CACHE_KEY_REGISTRY = f'{CACHE_KEY_PREFIX}:keys'
 
     def get_permissions(self):
         if self.action in ['create', 'partial_update', 'destroy', 'comments']:
@@ -78,6 +76,7 @@ class PostViewSet(viewsets.ViewSet):
         serializer = self.get_serializer_class()(page, many=True)
         response = paginator.get_paginated_response(serializer.data)
         cache.set(cache_key, response.data, timeout=60)
+        self.track_posts_cache_key(cache_key)
         return response
 
     def retrieve(self, request: Request, slug=None):
@@ -85,6 +84,7 @@ class PostViewSet(viewsets.ViewSet):
         serializer = self.get_serializer_class()(post)
         return Response(serializer.data)
 
+    @method_decorator(ratelimit(key='user', rate='20/m', method='POST', block=True))
     def create(self, request: Request):
         try:
             serializer = self.get_serializer_class()(data=request.data)
@@ -100,7 +100,7 @@ class PostViewSet(viewsets.ViewSet):
             raise
 
         logger.info('Post created: %s by %s', post.slug, request.user.email)
-        cache.clear()
+        self.invalidate_posts_list_cache()
         response_serializer = PostSerializer(post)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -120,7 +120,7 @@ class PostViewSet(viewsets.ViewSet):
             raise
 
         logger.info('Post updated: %s by %s', post.slug, request.user.email)
-        cache.clear()
+        self.invalidate_posts_list_cache()
         return Response(PostSerializer(post).data)
 
     def destroy(self, request: Request, slug=None):
@@ -134,7 +134,7 @@ class PostViewSet(viewsets.ViewSet):
             logger.exception('Unexpected error during post deletion for slug %s by %s', slug, request.user)
             raise
 
-        cache.clear()
+        self.invalidate_posts_list_cache()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_object_for_write(self, slug):
@@ -145,7 +145,6 @@ class PostViewSet(viewsets.ViewSet):
         self.check_object_permissions(self.request, post)
         return post
 
-    @method_decorator(ratelimit(key='user', rate='20/m', method='POST', block=True))
     @action(detail=True, methods=['get', 'post'], url_path='comments', url_name='comments')
     def comments(self, request: Request, slug=None):
         post = self.get_object()
@@ -172,6 +171,19 @@ class PostViewSet(viewsets.ViewSet):
         logger.info('Comment added to post %s by %s', post.slug, request.user.email)
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
+    def track_posts_cache_key(self, cache_key: str) -> None:
+        cached_keys = cache.get(self.CACHE_KEY_REGISTRY, set())
+        if cache_key in cached_keys:
+            return
+
+        cache.set(self.CACHE_KEY_REGISTRY, cached_keys | {cache_key}, timeout=60)
+
+    def invalidate_posts_list_cache(self) -> None:
+        cached_keys = cache.get(self.CACHE_KEY_REGISTRY, set())
+        if cached_keys:
+            cache.delete_many(list(cached_keys))
+        cache.delete(self.CACHE_KEY_REGISTRY)
+
     def publish_comment_created(self, post: Post, comment: Comment, author_email: str) -> None:
         event = {
             'type': 'comment_created',
@@ -180,8 +192,8 @@ class PostViewSet(viewsets.ViewSet):
             'body': comment.body,
         }
         try:
-            redis_client.publish('comments', json.dumps(event))
-        except redis.RedisError:
+            publish_comment_event(event)
+        except Exception:
             logger.exception('Failed to publish comment_created event for %s', post.slug)
 
 

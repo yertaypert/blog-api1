@@ -18,10 +18,21 @@ logger = logging.getLogger('users')
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
+    preferred_language = serializers.CharField(required=False)
+    preferred_timezone = serializers.CharField(required=False)
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name', 'password', 'password2', 'avatar')
+        fields = (
+            'email',
+            'first_name',
+            'last_name',
+            'password',
+            'password2',
+            'avatar',
+            'preferred_language',
+            'preferred_timezone',
+        )
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:

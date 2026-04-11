@@ -2,6 +2,7 @@
 import logging
 
 # Django modules
+from django.http import JsonResponse
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 
@@ -45,7 +46,7 @@ class LoginView(TokenObtainPairView):
 
 
 def ratelimit_response(request, exception):
-    return Response(
+    return JsonResponse(
         {'detail': 'Too many requests. Try again later.'},
         status=429,
     )
