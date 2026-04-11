@@ -7,8 +7,8 @@ from .models import Category, Tag, Post, Comment
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name_en', 'slug']
-    prepopulated_fields = {'slug': ('name_en',)}
+    list_display = ['id', 'name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Tag)

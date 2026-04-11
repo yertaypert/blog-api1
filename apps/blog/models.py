@@ -6,23 +6,12 @@ from django.utils import timezone
 
 
 class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 
     slug = models.SlugField(unique=True)
 
     def __str__(self) -> str:
         return self.name
-    name_en = models.CharField(max_length=100, default="")
-    name_ru = models.CharField(max_length=100, default="")
-    name_kk = models.CharField(max_length=100, default="")
-
-    def get_name(self, language):
-
-        if language == "ru":
-            return self.name_ru
-        elif language == "kk":
-            return self.name_kk
-
-        return self.name_en
 
 
 class Tag(models.Model):

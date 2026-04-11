@@ -1,5 +1,5 @@
 # Python modules
-import os
+from pathlib import Path
 
 # Project modules
 from .conf import *  # noqa
@@ -8,7 +8,7 @@ from .conf import *  # noqa
 # ----------------------------------------------
 # Path
 #
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_URLCONF = "settings.urls"
 WSGI_APPLICATION = "settings.wsgi.application"
 ASGI_APPLICATION = "settings.asgi.application"
@@ -95,9 +95,7 @@ LOCALE_PATHS = [
 ]
 
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 # ----------------------------------------------
@@ -105,11 +103,11 @@ USE_TZ = True
 #
 STATIC_URL = "static/"
 
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-
-
+# ----------------------------------------------
+# Rate limiting
+#
 RATELIMIT_VIEW = "apps.users.views.ratelimit_response"
 RATELIMIT_USE_CACHE = 'default'
+
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
