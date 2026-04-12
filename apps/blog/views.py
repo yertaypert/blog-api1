@@ -16,6 +16,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 
 # Project modules
 from .models import Comment, Post
@@ -75,6 +76,15 @@ class PostViewSet(viewsets.ViewSet):
             return PostCreateUpdateSerializer
         return PostSerializer
 
+    @extend_schema(
+        summary="List published posts",
+        description="Returns a paginated list of published posts. Results are cached for 60 seconds. Supports language localization via 'Accept-Language' header.",
+        tags=["Posts"],
+        parameters=[
+            OpenApiParameter("page", type=int, description="Page number for pagination")
+        ],
+        responses={200: PostSerializer(many=True)}
+    )
     def list(self, request: Request) -> Response:
         queryset = self.get_queryset().order_by("-created_at")
         page_number = request.query_params.get("page", "1")
@@ -91,11 +101,31 @@ class PostViewSet(viewsets.ViewSet):
         self.track_posts_cache_key(cache_key)
         return response
 
+    @extend_schema(
+        summary="Retrieve a post",
+        description="Returns detailed information about a single published post by its slug.",
+        tags=["Posts"],
+        responses={
+            200: PostSerializer,
+            404: OpenApiExample("Not Found", value={"detail": "Not found."}),
+        }
+    )
     def retrieve(self, request: Request, slug: str | None = None) -> Response:
         post = self.get_object()
         serializer = self.get_serializer_class()(post)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Create a new post",
+        description="Creates a new post. Requires authentication. Invalidator Celery task is triggered to clear the posts list cache. If published, triggers a WebSocket broadcast.",
+        tags=["Posts"],
+        request=PostCreateUpdateSerializer,
+        responses={
+            201: PostSerializer,
+            400: OpenApiExample("Validation Error", value={"title": ["This field is required."]}),
+            401: OpenApiExample("Unauthorized", value={"detail": "Authentication credentials were not provided."}),
+        }
+    )
     @method_decorator(ratelimit(key="user", rate="20/m", method="POST", block=True))
     def create(self, request: Request) -> Response:
         try:
@@ -119,6 +149,17 @@ class PostViewSet(viewsets.ViewSet):
         response_serializer = PostSerializer(post)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        summary="Update a post",
+        description="Partially updates an existing post. Only the author can perform this action. Clears the posts list cache and may trigger a WebSocket broadcast if status changes to published.",
+        tags=["Posts"],
+        request=PostCreateUpdateSerializer,
+        responses={
+            200: PostSerializer,
+            403: OpenApiExample("Forbidden", value={"detail": "You do not have permission to perform this action."}),
+            404: OpenApiExample("Not Found", value={"detail": "Not found."}),
+        }
+    )
     def partial_update(self, request: Request, slug: str | None = None) -> Response:
         try:
             post = self.get_object_for_write(slug)
@@ -141,6 +182,16 @@ class PostViewSet(viewsets.ViewSet):
         self.invalidate_posts_list_cache()
         return Response(PostSerializer(post).data)
 
+    @extend_schema(
+        summary="Delete a post",
+        description="Deletes a post by its slug. Only the author can perform this action. Clears the posts list cache.",
+        tags=["Posts"],
+        responses={
+            204: None,
+            403: OpenApiExample("Forbidden", value={"detail": "You do not have permission to perform this action."}),
+            404: OpenApiExample("Not Found", value={"detail": "Not found."}),
+        }
+    )
     def destroy(self, request: Request, slug: str | None = None) -> Response:
         try:
             post = self.get_object_for_write(slug)
@@ -164,6 +215,16 @@ class PostViewSet(viewsets.ViewSet):
         self.check_object_permissions(self.request, post)
         return post
 
+    @extend_schema(
+        summary="Manage post comments",
+        description="GET: List all comments for a post. POST: Add a new comment to a post. Creating a comment triggers a Celery task for processing and sends a notification.",
+        tags=["Comments"],
+        responses={
+            200: CommentSerializer(many=True),
+            201: CommentSerializer,
+            401: OpenApiExample("Unauthorized", value={"detail": "Authentication credentials were not provided."}),
+        }
+    )
     @action(detail=True, methods=["get", "post"], url_path="comments", url_name="comments")
     def comments(self, request: Request, slug: str | None = None) -> Response:
         post = self.get_object()
@@ -229,6 +290,15 @@ class CommentViewSet(viewsets.ViewSet):
         self.check_object_permissions(self.request, comment)
         return comment
 
+    @extend_schema(
+        summary="Update a comment",
+        description="Updates an existing comment. Only the author can perform this action.",
+        tags=["Comments"],
+        responses={
+            200: CommentSerializer,
+            403: OpenApiExample("Forbidden", value={"detail": "You do not have permission to perform this action."}),
+        }
+    )
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         try:
             comment = self.get_object()
@@ -246,32 +316,15 @@ class CommentViewSet(viewsets.ViewSet):
 
         return Response(CommentSerializer(comment).data)
     
-    def create(self, request: Request, *args, **kwargs) -> Response:
-        post_slug = self.kwargs.get("slug")
-
-        post = get_object_or_404(Post, slug=post_slug)
-        if post.status != Post.Status.PUBLISHED:
-            return Response(
-            {"detail": "Cannot comment on draft posts."},
-            status=403
-        )
-
-        serializer = CommentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        comment = serializer.save(
-            author=request.user,
-            post=post
-        )
-
-        process_new_comment.delay(comment.id)
-
-        
-        # send_new_comment_to_websocket(comment)
-        # notify_new_comment(comment)
-
-        return Response(CommentSerializer(comment).data, status=201)
-
+    @extend_schema(
+        summary="Delete a comment",
+        description="Deletes a comment. Only the author or a moderator can perform this action.",
+        tags=["Comments"],
+        responses={
+            204: None,
+            403: OpenApiExample("Forbidden", value={"detail": "You do not have permission to perform this action."}),
+        }
+    )
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         try:
             comment = self.get_object()

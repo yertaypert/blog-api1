@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiExample
 
 from apps.blog.models import Post, Comment
 from apps.users.models import User
@@ -31,6 +32,51 @@ class StatsView(APIView):
     of both latencies instead of the *maximum*.
     """
 
+    @extend_schema(
+        summary="Get blog statistics",
+        description="Returns global statistics for the blog, including total counts of posts, comments, and users, as well as external exchange rates and localized time for Almaty.",
+        tags=["Stats"],
+        responses={
+            200: OpenApiExample(
+                "Stats Response",
+                value={
+                    "blog": {
+                        "total_posts": 10,
+                        "total_comments": 25,
+                        "total_users": 5
+                    },
+                    "exchange_rates": {
+                        "KZT": 450.0,
+                        "RUB": 90.0,
+                        "EUR": 0.92
+                    },
+                    "current_time": "2026-04-12T12:00:00"
+                }
+            )
+        }
+    )
+    async def get(self, request, *args, **kwargs):
+        # Local blog stats
+        blog_stats = {
+            "total_posts": await asyncio.to_thread(Post.objects.count),
+            "total_comments": await asyncio.to_thread(Comment.objects.count),
+            "total_users": await asyncio.to_thread(User.objects.count),
+        }
+
+        # Concurrent external API calls
+        exchange_rates, current_time = await asyncio.gather(
+            self.fetch_exchange_rates(),
+            self.fetch_current_time(),
+        )
+
+        response_data = {
+            "blog": blog_stats,
+            "exchange_rates": exchange_rates,
+            "current_time": current_time,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
     async def fetch_exchange_rates(self):
         url = "https://open.er-api.com/v6/latest/USD"
         try:
@@ -60,25 +106,3 @@ class StatsView(APIView):
             logger.error("Failed to fetch current time: %s", e)
             # Fallback: return server UTC time
             return datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat()
-
-    async def get(self, request, *args, **kwargs):
-        # Local blog stats
-        blog_stats = {
-            "total_posts": await asyncio.to_thread(Post.objects.count),
-            "total_comments": await asyncio.to_thread(Comment.objects.count),
-            "total_users": await asyncio.to_thread(User.objects.count),
-        }
-
-        # Concurrent external API calls
-        exchange_rates, current_time = await asyncio.gather(
-            self.fetch_exchange_rates(),
-            self.fetch_current_time(),
-        )
-
-        response_data = {
-            "blog": blog_stats,
-            "exchange_rates": exchange_rates,
-            "current_time": current_time,
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)

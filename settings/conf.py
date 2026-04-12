@@ -100,9 +100,12 @@ SIMPLE_JWT = {
 #
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Djangorlar API',
-    'DESCRIPTION': 'Your project description',
+    'DESCRIPTION': 'Comprehensive API for the Djangorlar Blog platform.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/',
 }
 
 # ----------------------------------------------

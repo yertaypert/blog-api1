@@ -9,6 +9,7 @@ from django.http.response import StreamingHttpResponse
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from drf_spectacular.utils import extend_schema, OpenApiExample
 
 from .models import Notification
 from .serializers import NotificationSerializer
@@ -59,34 +60,27 @@ class NotificationViewSet(viewsets.GenericViewSet):
             recipient=self.request.user
         ).select_related("comment", "comment_author", "comment_post")
     
+    @extend_schema(
+        summary="Get unread notifications count",
+        description="Returns the total number of unread notifications for the authenticated user. Useful for periodic polling.",
+        tags=["Notifications"],
+        responses={
+            200: OpenApiExample("Count Response", value={"unread_count": 5}),
+            401: OpenApiExample("Unauthorized", value={"detail": "Authentication credentials were not provided."}),
+        }
+    )
     @action(detail=False, methods=["get"], url_path="count")
     def count(self, request):
-        """
-        Polling endpoint for unread notification count
-
-        HTTP Polling: 
-            - Simplicity: easy to implement on the client
-            - No persistent connection
-            - Latency: updates are visible only on next poll
-            - Server load: every active user makes a request every N seconds, more DB load
-
-        Polling is acceptable when:
-            - Notification are not so critical
-            - Not too much number of users
-            - Quick reliable fallback needed
-
-        Switch to WebSockets or SSE when:
-            - Need true real time (fast speeds)
-            - High concurrency, need to reduce polling load
-        """
         unread_count = self.get_queryset().filter(is_read=False).count()
         return Response({"unread_count": unread_count})
     
-
+    @extend_schema(
+        summary="List user notifications",
+        description="Returns a paginated list of all notifications for the authenticated user.",
+        tags=["Notifications"],
+        responses={200: NotificationSerializer(many=True)}
+    )
     def list(self, request):
-        """
-        Paginated list of all notifications for the current user
-        """
         queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -95,11 +89,17 @@ class NotificationViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
-
+    @extend_schema(
+        summary="Mark all notifications as read",
+        description="Updates all unread notifications for the authenticated user to read status.",
+        tags=["Notifications"],
+        responses={
+            200: OpenApiExample("Success", value={"detail": "All notifications marked as read"}),
+            401: OpenApiExample("Unauthorized", value={"detail": "Authentication credentials were not provided."}),
+        }
+    )
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
     def mark_all_read(self, request):
-        """
-        Mark all the notications for the current user as read
-        """
         self.get_queryset().filter(is_read=False).update(is_read=True)
         return Response(
             {"detail": "All notifications marked as read"},
