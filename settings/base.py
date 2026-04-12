@@ -26,11 +26,13 @@ DJANGO_AND_THIRD_PARTY_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    'rest_framework_simplejwt',
+    "rest_framework_simplejwt",
+    "channels",
 ]
 PROJECT_APPS = [
     "apps.blog.apps.BlogConfig",
     "apps.users.apps.UsersConfig",
+    "apps.notifications.apps.NotificationsConfig",
 ]
 INSTALLED_APPS = DJANGO_AND_THIRD_PARTY_APPS + PROJECT_APPS
 

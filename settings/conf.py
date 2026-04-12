@@ -195,6 +195,18 @@ CACHES = {
 }
 
 # ----------------------------------------------
+# WebSocket Channels
+#
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
+        },
+    },
+}
+
+# ----------------------------------------------
 # Debug Toolbar
 #
 DEBUG_TOOLBAR_PANELS = [
