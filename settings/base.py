@@ -26,6 +26,7 @@ DJANGO_AND_THIRD_PARTY_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    'rest_framework_simplejwt',
 ]
 PROJECT_APPS = [
     "apps.blog.apps.BlogConfig",

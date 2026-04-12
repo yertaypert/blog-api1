@@ -232,6 +232,26 @@ class CommentViewSet(viewsets.ViewSet):
             raise
 
         return Response(CommentSerializer(comment).data)
+    
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        post_slug = self.kwargs.get("slug")
+
+        post = get_object_or_404(Post, slug=post_slug)
+        if post.status != Post.Status.PUBLISHED:
+            return Response(
+            {"detail": "Cannot comment on draft posts."},
+            status=403
+        )
+
+        serializer = CommentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        comment = serializer.save(
+            author=request.user,
+            post=post
+        )
+
+        return Response(CommentSerializer(comment).data, status=201)
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         try:

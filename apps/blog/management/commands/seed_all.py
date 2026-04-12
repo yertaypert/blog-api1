@@ -1,8 +1,14 @@
+# Python modules
 import random
+
+# Django modules
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
+
+# Project modules
 from apps.users.models import User
 from apps.blog.models import Post, Comment, Category
-from django.utils.text import slugify
+
 
 class Command(BaseCommand):
     help = "Seed the database with users, categories, posts, and comments for testing."

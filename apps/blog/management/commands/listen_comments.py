@@ -1,8 +1,11 @@
+# Python modules
 import json
 from typing import Any
 
+# Django modules
 from django.core.management.base import BaseCommand
 
+# Project modules
 from apps.blog.redis import COMMENTS_CHANNEL, get_redis_connection
 
 
