@@ -6,5 +6,5 @@ from apps.notifications.consumers import CommentConsumer
 
 
 websocket_urlpatterns = [
-    re_path(r"ws/posts/(<slug>)/comments/", CommentConsumer.as_asgi()),
+    re_path(r"ws/posts/(?P<slug>[-\w]+)/comments/?$", CommentConsumer.as_asgi()),
 ]

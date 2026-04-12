@@ -17,7 +17,7 @@ def send_new_comment_to_websocket(comment):
             "email": comment.author.email,
         },
         "body": comment.body,
-        "created_at": comment.created_at,
+        "created_at": comment.created_at.isoformat(),
     }
 
     async_to_sync(channel_layer.group_send)(
