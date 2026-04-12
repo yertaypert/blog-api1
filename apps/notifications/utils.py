@@ -2,6 +2,8 @@
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+# Project modules
+from .models import Notification
 
 
 def send_new_comment_to_websocket(comment):
@@ -50,3 +52,25 @@ def publish_post(post):
             "message": data,
         }
     )
+
+
+def create_comment_notification(comment):
+    """
+    Create a notification only for the post author
+    """
+    if comment.author_id == comment.post.author_id:
+        return
+    
+    Notification.objects.create(
+        recipient=comment.post.author,
+        comment=comment,
+    )
+
+
+def notify_new_comment(comment):
+    """
+    Call this after any comment created
+    Triggers WebSocket + Notification
+    """
+    send_new_comment_to_websocket(comment)
+    

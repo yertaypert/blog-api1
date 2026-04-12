@@ -22,7 +22,7 @@ from .models import Comment, Post
 from .permissions import IsOwnerOrReadOnly
 from .redis import publish_comment_event
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer
-from apps.notifications.utils import send_new_comment_to_websocket, publish_post
+from apps.notifications.utils import send_new_comment_to_websocket, publish_post, notify_new_comment
 
 
 LOGGER_NAME = "blog"
@@ -173,7 +173,8 @@ class PostViewSet(viewsets.ViewSet):
             serializer.is_valid(raise_exception=True)
             comment = serializer.save(author=request.user, post=post)
             self.publish_comment_created(post, comment, request.user.email)
-            send_new_comment_to_websocket(comment)
+            # send_new_comment_to_websocket(comment)
+            notify_new_comment(comment)
         except serializers.ValidationError:
             logger.warning("Comment creation failed for post %s by %s", post.slug, request.user)
             raise
@@ -257,8 +258,9 @@ class CommentViewSet(viewsets.ViewSet):
             post=post
         )
 
-        # real-time broadcast to channel
-        send_new_comment_to_websocket(comment)
+        
+        # send_new_comment_to_websocket(comment)
+        notify_new_comment(comment)
 
         return Response(CommentSerializer(comment).data, status=201)
 
