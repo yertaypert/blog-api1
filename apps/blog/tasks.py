@@ -51,7 +51,7 @@ def publish_scheduled_posts():
         - Retrying guarantess post is published and SSE will be received
     """
     now = timezone.now()
-    posts_to_publish = Post.object.filter(
+    posts_to_publish = Post.objects.filter(
         status=Post.Status.SCHEDULED,
         published_at=now
     ).select_related("author", "category")

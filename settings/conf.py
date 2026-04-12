@@ -17,17 +17,24 @@ env_path = os.path.join(SETTINGS_DIR, '.env')
 
 
 # ----------------------------------------------
-# Env id
+# Core env vars
 #
 SECRET_KEY = config("BLOG_SECRET_KEY", default="default-secret-key", cast=str)
 ENV_ID = config("BLOG_ENV_ID", default="local", cast=str)
 ALLOWED_ENV_IDS = ("local", "prod",)
 ALLOWED_HOSTS = config("BLOG_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+DATABASE_NAME = config("BLOG_DATABASE_NAME", default="db.sqlite3", cast=str)
+DEBUG = config("BLOG_DEBUG", default=False, cast=bool)
 EMAIL_BACKEND = config(
     "BLOG_EMAIL_BACKEND",
     default="django.core.mail.backends.console.EmailBackend",
     cast=str,
 )
+
+# ----------------------------------------------
+# Celery
+#
+CELERY_BEAT_SCHEDULE_FILENAME = config("CELERY_BEAT_SCHEDULE_FILENAME", default="celerybeat-schedule", cast=str)
 
 # ----------------------------------------------
 # Django REST Framework
@@ -178,8 +185,8 @@ REDIS_PORT = config("REDIS_PORT", cast=int, default=6379)
 REDIS_CELERY_DB = config("REDIS_CELERY_DB", cast=int, default=1)
 REDIS_DB = config("REDIS_DB", cast=int, default=2)
 
-REDIS_CELERY_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
-REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+REDIS_CELERY_URL = config("BLOG_CELERY_BROKER_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}")
+REDIS_URL = config("BLOG_REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
 
 # ----------------------------------------------
 # Caching
@@ -228,4 +235,4 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.profiling.ProfilingPanel',
 ]
 
-DEBUG = config("BLOG_DEBUG", default=False, cast=bool)
+

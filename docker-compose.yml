@@ -1,44 +1,61 @@
-version: "3.9"
-
 services:
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   web:
     build: .
+    command: daphne -b 0.0.0.0 -p 8000 settings.asgi:application
     ports:
       - "8000:8000"
-    depends_on:
-      - redis
     env_file:
-      - .env
-    command: daphne -b 0.0.0.0 -p 8000 settings.asgi:application
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
+      - static_volume:/app/staticfiles
 
   celery_worker:
     build: .
-    env_file:
-      - .env
-    depends_on:
-      - redis
     command: celery -A settings worker -l info
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
 
   celery_beat:
     build: .
-    env_file:
-      - .env
-    depends_on:
-      - redis
     command: celery -A settings beat -l info
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
 
   flower:
     build: .
+    command: celery -A settings flower --basic-auth=$${BLOG_FLOWER_USER}:$${BLOG_FLOWER_PASSWORD}
     ports:
       - "5555:5555"
     env_file:
-      - .env
+      - settings/.env
     depends_on:
-      - redis
-    command: celery -A settings flower --basic-auth=$BLOG_FLOWER_USER:$BLOG_FLOWER_PASSWORD
+      redis:
+        condition: service_healthy
+
+volumes:
+  sqlite_data:
+  static_volume:

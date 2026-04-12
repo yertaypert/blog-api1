@@ -6,7 +6,7 @@ from celery import Celery
 from celery.schedules import crontab
 
 # Project modules
-from settings.conf import ENV_ID
+from settings.conf import ENV_ID, CELERY_BEAT_SCHEDULE_FILENAME
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"settings.env.{ENV_ID}")
@@ -21,6 +21,9 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
+
+# Persistent schedule file
+app.conf.beat_schedule_filename = CELERY_BEAT_SCHEDULE_FILENAME
 
 
 # # Common interval launch with Celery

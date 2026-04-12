@@ -105,6 +105,7 @@ USE_TZ = True
 # Static | Media
 #
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ----------------------------------------------
 # Rate limiting
