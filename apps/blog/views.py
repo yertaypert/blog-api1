@@ -22,7 +22,7 @@ from .models import Comment, Post
 from .permissions import IsOwnerOrReadOnly
 from .redis import publish_comment_event
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer
-from apps.notifications.utils import send_new_comment_to_websocket
+from apps.notifications.utils import send_new_comment_to_websocket, publish_post
 
 
 LOGGER_NAME = "blog"
@@ -100,6 +100,8 @@ class PostViewSet(viewsets.ViewSet):
             serializer = self.get_serializer_class()(data=request.data)
             serializer.is_valid(raise_exception=True)
             post = serializer.save(author=request.user)
+            if post.status == "published":
+                publish_post(post)
         except serializers.ValidationError:
             logger.warning("Post creation failed for user: %s", request.user)
             raise
@@ -120,6 +122,8 @@ class PostViewSet(viewsets.ViewSet):
             serializer = self.get_serializer_class()(post, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             post = serializer.save()
+            if post.status == "published":
+                publish_post(post)
         except serializers.ValidationError:
             logger.warning("Post update failed for slug %s by %s", slug, request.user)
             raise
@@ -169,7 +173,6 @@ class PostViewSet(viewsets.ViewSet):
             serializer.is_valid(raise_exception=True)
             comment = serializer.save(author=request.user, post=post)
             self.publish_comment_created(post, comment, request.user.email)
-            # send comment to websocket
             send_new_comment_to_websocket(comment)
         except serializers.ValidationError:
             logger.warning("Comment creation failed for post %s by %s", post.slug, request.user)

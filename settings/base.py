@@ -23,12 +23,11 @@ DJANGO_AND_THIRD_PARTY_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "daphne",
     "django.contrib.staticfiles",
-
     "rest_framework",
     "rest_framework_simplejwt",
     "channels",
-    "daphne",
 ]
 PROJECT_APPS = [
     "apps.blog.apps.BlogConfig",

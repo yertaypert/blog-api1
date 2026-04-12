@@ -27,3 +27,26 @@ def send_new_comment_to_websocket(comment):
             "message": message,
         }
     )
+
+
+def publish_post(post):
+    channel_layer = get_channel_layer()
+
+    data = {
+        "post_id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "author": {
+            "id": post.author.id,
+            "email": post.author.email,
+        },
+        "published_at": post.created_at.isoformat(),
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        "posts_stream",
+        {
+            "type": "post_published",
+            "message": data,
+        }
+    )
