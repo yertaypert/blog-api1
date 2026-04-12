@@ -193,6 +193,7 @@ CACHES = {
         }
     }
 }
+POSTS_CACHE_KEY_REGISTRY = "posts_list_registry"
 
 # ----------------------------------------------
 # WebSocket Channels

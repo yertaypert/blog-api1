@@ -24,9 +24,17 @@ app.autodiscover_tasks()
 
 
 # # Common interval launch with Celery
-# app.conf.beat_schedule = {
-#     "spam-everyone-every-5-minutes": {
-#         "task": "apps.auths.tasks.spam_everyone_every_5_minutes",  # Replace with the actual path to your task
-#         "schedule": crontab(minute="*/5")
-#     },
-# }
+app.conf.beat_schedule = {
+    "spam-everyone-every-minute": {
+        "task": "apps.blog.tasks.publish_scheduled_posts",
+        "schedule": 60,
+    },
+    "clear_expired_notifications": {
+        "task": "apps.notifications.tasks.clear_expired_notifications",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "generate_daily_stats": {
+        "task": "apps.blog.tasks.generate_daily_stats",
+        "schedule": crontab(hour=0, minute=0),
+    },
+}

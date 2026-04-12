@@ -27,6 +27,7 @@ class Post(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Draft'
         PUBLISHED = 'published', 'Published'
+        SCHEDULED = 'scheduled', 'Scheduled'
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -53,6 +54,8 @@ class Post(models.Model):
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    publish_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
         return self.title
