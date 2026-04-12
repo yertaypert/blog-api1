@@ -67,7 +67,7 @@ def create_comment_notification(comment):
     )
 
 
-def notify_new_comment(comment):
+def notify_new_comment(comment): # NOTE: can be removed
     """
     Call this after any comment created
     Triggers WebSocket + Notification

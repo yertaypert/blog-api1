@@ -23,6 +23,8 @@ from .permissions import IsOwnerOrReadOnly
 from .redis import publish_comment_event
 from .serializers import CommentSerializer, PostCreateUpdateSerializer, PostSerializer
 from apps.notifications.utils import send_new_comment_to_websocket, publish_post, notify_new_comment
+from .tasks import invalidate_posts_list_cache
+from apps.notifications.tasks import process_new_comment
 
 
 LOGGER_NAME = "blog"
@@ -100,6 +102,7 @@ class PostViewSet(viewsets.ViewSet):
             serializer = self.get_serializer_class()(data=request.data)
             serializer.is_valid(raise_exception=True)
             post = serializer.save(author=request.user)
+            invalidate_posts_list_cache.delay()
             if post.status == "published":
                 publish_post(post)
         except serializers.ValidationError:
@@ -122,6 +125,7 @@ class PostViewSet(viewsets.ViewSet):
             serializer = self.get_serializer_class()(post, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             post = serializer.save()
+            invalidate_posts_list_cache.delay()
             if post.status == "published":
                 publish_post(post)
         except serializers.ValidationError:
@@ -142,6 +146,7 @@ class PostViewSet(viewsets.ViewSet):
             post = self.get_object_for_write(slug)
             logger.info("Post deleted: %s by %s", post.slug, request.user.email)
             post.delete()
+            invalidate_posts_list_cache.delay()
         except APIException:
             raise
         except Exception:
@@ -173,6 +178,7 @@ class PostViewSet(viewsets.ViewSet):
             serializer.is_valid(raise_exception=True)
             comment = serializer.save(author=request.user, post=post)
             self.publish_comment_created(post, comment, request.user.email)
+            process_new_comment.delay(comment.id)
             # send_new_comment_to_websocket(comment)
             notify_new_comment(comment)
         except serializers.ValidationError:
@@ -258,9 +264,11 @@ class CommentViewSet(viewsets.ViewSet):
             post=post
         )
 
+        process_new_comment.delay(comment.id)
+
         
         # send_new_comment_to_websocket(comment)
-        notify_new_comment(comment)
+        # notify_new_comment(comment)
 
         return Response(CommentSerializer(comment).data, status=201)
 

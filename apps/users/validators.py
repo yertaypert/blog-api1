@@ -1,6 +1,11 @@
+# Python modules
 import pytz
-from rest_framework import serializers
+
+# Django modules
 from django.utils.translation import gettext_lazy as _
+
+# Django Rest Framework modules
+from rest_framework import serializers
 
 
 class TimezoneValidator:
