@@ -20,7 +20,7 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "Compiling translation messages..."
-python manage.py compilemessages --noinput || true
+python manage.py compilemessages || true
 
 echo "Starting application with: $@"
 exec "$@"

@@ -1,12 +1,16 @@
+# Python modules
+import json
+import logging
+from datetime import timedelta
+
+# Django + Third Party modules
 from celery import shared_task
 from django.core.cache import cache
 from django.utils import timezone
-from settings.base import AUTH_USER_MODEL
-from datetime import timedelta
 import redis
-import json
-import logging
 
+# Project modules
+from settings.base import AUTH_USER_MODEL
 from .models import Post, Comment
 from settings.conf import REDIS_URL, POSTS_CACHE_KEY_REGISTRY
 
@@ -53,7 +57,7 @@ def publish_scheduled_posts():
     now = timezone.now()
     posts_to_publish = Post.objects.filter(
         status=Post.Status.SCHEDULED,
-        published_at=now
+        publish_at__lte=now,
     ).select_related("author", "category")
 
     for post in posts_to_publish:
