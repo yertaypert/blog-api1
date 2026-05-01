@@ -44,15 +44,15 @@ Django-based blog API featuring real-time notifications, asynchronous statistics
    docker compose up --build
    ```
 
-The application will be available at `http://localhost:8000`.
+The application will be available at `http://localhost`.
 
 ## 📖 API Documentation
 
 The API is fully documented and browsable:
 
-- **Swagger UI**: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
-- **ReDoc**: [http://localhost:8000/api/redoc/](http://localhost:8000/api/redoc/)
-- **OpenAPI Schema**: [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/)
+- **Swagger UI**: [http://localhost/api/docs/](http://localhost/api/docs/)
+- **ReDoc**: [http://localhost/api/redoc/](http://localhost/api/redoc/)
+- **OpenAPI Schema**: [http://localhost/api/schema/](http://localhost/api/schema/)
 
 ### Key API Endpoints
 
@@ -73,6 +73,7 @@ The API is fully documented and browsable:
 
 
 - **web**: Django Daphne server (Port 8000)
+- **nginx**: Reverse proxy and static/media server (Port 80)
 - **redis**: Cache and Broker (Port 6379)
 - **celery_worker**: Background task processor
 - **celery_beat**: Periodic task scheduler
@@ -82,3 +83,85 @@ The API is fully documented and browsable:
 
 The API uses JWT (JSON Web Tokens). Obtain tokens at `/api/auth/token/` and include them in the `Authorization` header:
 `Authorization: JWT <your_token>`
+
+## Reverse Proxy Verification
+
+After `docker compose up --build`, verify that requests go through nginx and that the app is not exposed directly on host port `8000`.
+
+1. Admin route through nginx:
+   ```bash
+   curl -I http://localhost/admin/login/
+   ```
+   Expected:
+   - `HTTP/1.1 200 OK`
+   - `Server: nginx/...`
+
+2. Static file through nginx:
+   ```bash
+   curl -I http://localhost/static/admin/css/base.css
+   ```
+   Expected:
+   - `HTTP/1.1 200 OK`
+   - a long `Cache-Control: max-age=...` header
+
+3. API through nginx:
+   ```bash
+   curl http://localhost/api/posts/
+   ```
+   Expected:
+   - JSON list of posts
+
+4. Upstream failure is surfaced by nginx as `502`, not connection refused:
+   ```bash
+   docker compose stop web
+   curl -I http://localhost/api/posts/
+   ```
+   Expected:
+   - `HTTP/1.1 502 Bad Gateway`
+   - response returned by nginx
+
+   Restart `web` afterwards:
+   ```bash
+   docker compose start web
+   ```
+
+5. App container is not published directly to the host:
+   ```bash
+   curl http://localhost:8000/
+   ```
+   Expected:
+   - connection refused
+
+## WebSocket Verification
+
+Use an existing published post slug such as `ws-test-post`.
+
+1. Obtain a JWT:
+   ```bash
+   curl -sS -X POST http://localhost/api/auth/token/ \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"ws-test@example.com","password":"StrongPass123!"}'
+   ```
+
+2. Connect with `wscat`:
+   ```bash
+   wscat -c "ws://localhost/ws/posts/ws-test-post/comments/?token=<JWT>"
+   ```
+   Expected:
+   - WebSocket handshake succeeds with `101 Switching Protocols`
+
+3. In another terminal, post a comment through the REST API:
+   ```bash
+   curl -sS -X POST http://localhost/api/posts/ws-test-post/comments/ \
+     -H 'Content-Type: application/json' \
+     -H 'Authorization: JWT <JWT>' \
+     -d '{"body":"hello from curl"}'
+   ```
+   Expected:
+   - `201 Created`
+   - a WebSocket message arrives in `wscat`
+
+4. Browser alternative:
+   - Open DevTools and create a WebSocket connection to `ws://localhost/ws/posts/ws-test-post/comments/?token=<JWT>`
+   - Post a comment via the REST API
+   - Confirm the comment message arrives on the socket
